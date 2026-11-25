@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central de Certificados Digitais | e-CNPJ & Vencimentos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/static/forge.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background-color: #f1f5f9; color: #1e293b; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">Painel de Certificados Digitais</h1>
+          <p class="text-xs text-slate-500 font-medium">Gestão de Vencimentos & Validador PFX</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-3">
+        <a href="/" class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 flex items-center space-x-1.5 transition-all shadow-sm">
+          <i data-lucide="layout-grid" class="w-4 h-4 text-slate-600"></i>
+          <span>Página Inicial</span>
+        </a>
+        <a href="/pdf-studio" class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 flex items-center space-x-1.5 transition-all shadow-sm">
+          <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
+          <span>GhostPDF Studio</span>
+        </a>
+        <a href="/conciliacao" class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center space-x-1.5 transition-all shadow-sm">
+          <i data-lucide="calculator" class="w-4 h-4 text-indigo-600"></i>
+          <span>Conciliação Bancária</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout Expandido -->
+  <main class="flex-1 max-w-[1500px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Grid Principal: Coluna Esquerda Compacta (Upload/Validador) e Coluna Direita Ampla (Listagem) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- ============================================== -->
+      <!-- COLUNA ESQUERDA: VALIDADOR PFX COMPACTO (3 Cols) -->
+      <!-- ============================================== -->
+      <div class="lg:col-span-3 space-y-4">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3.5 sticky top-20">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center space-x-1.5">
+              <i data-lucide="key-round" class="w-3.5 h-3.5 text-amber-600"></i>
+              <span>Validador de .PFX</span>
+            </span>
+            <span class="text-[10px] bg-amber-50 text-amber-700 font-semibold px-2 py-0.5 rounded-full border border-amber-200">Local</span>
+          </div>
+
+          <!-- Dropzone PFX Compacta -->
+          <div id="pfx-dropzone" class="border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50 text-center hover:border-amber-500 hover:bg-amber-50/40 transition-all cursor-pointer relative group">
+            <input type="file" id="pfx-file-input" accept=".pfx,.p12" class="hidden">
+            <div class="flex flex-col items-center justify-center space-y-1.5 pointer-events-none">
+              <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <i data-lucide="file-key" class="w-4 h-4"></i>
+              </div>
+              <p class="text-xs font-semibold text-slate-700">Arraste o <span class="text-amber-600 underline">.pfx</span> aqui</p>
+              <p class="text-[10px] text-slate-400">ou clique para escolher</p>
+            </div>
+            <div id="pfx-file-name" class="mt-2 text-[11px] font-bold text-blue-600 break-all hidden"></div>
+          </div>
+
+          <!-- Senha -->
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Senha do Certificado</label>
+            <div class="flex items-center space-x-1.5">
+              <input type="password" id="pfx-password" placeholder="Senha..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500">
+              <button type="button" onclick="togglePfxPassword()" id="btn-toggle-pfx-pass" class="px-2.5 py-1.5 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-600">Ver</button>
+            </div>
+          </div>
+
+          <button type="button" id="btn-read-pfx" onclick="processarPfxLocal()" disabled class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+            <i data-lucide="scan" class="w-3.5 h-3.5"></i>
+            <span>Ler Certificado</span>
+          </button>
+
+          <div id="pfx-error" class="hidden p-2.5 rounded-lg bg-red-50 border border-red-200 text-[11px] font-semibold text-red-600"></div>
+
+          <!-- Card Resultado Compacto -->
+          <div id="pfx-result" class="hidden p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-[11px]">
+            <div>
+              <span class="text-slate-400 font-medium block">Razão / Titular:</span>
+              <span id="pfx-res-nome" class="text-slate-900 font-bold text-xs leading-tight block"></span>
+            </div>
+
+            <div class="p-2 rounded-lg bg-blue-50/80 border border-blue-200 flex items-center justify-between">
+              <div class="overflow-hidden pr-1">
+                <span class="text-[9px] font-bold text-blue-700 uppercase tracking-wider block">Padrão Arquivamento:</span>
+                <span id="pfx-res-padrao" class="font-mono text-[10px] font-bold text-slate-800 select-all truncate block"></span>
+              </div>
+              <button type="button" id="btn-copy-padrao" onclick="copiarPadraoPfx()" class="shrink-0 px-2 py-0.5 text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded transition-all">Copiar</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-1.5 pt-1">
+              <div>
+                <span class="text-slate-400 block text-[10px]">CNPJ / CPF:</span>
+                <span id="pfx-res-doc" class="font-bold text-slate-800"></span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">Status:</span>
+                <span id="pfx-res-status"></span>
+              </div>
+            </div>
+
+            <div>
+              <span class="text-slate-400 block text-[10px]">Validade:</span>
+              <span id="pfx-res-validade" class="text-slate-700 font-medium text-[10px]"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- COLUNA DIREITA: LISTAGEM AMPLA E ORDENÁVEL (9 Cols) -->
+      <!-- ============================================== -->
+      <div class="lg:col-span-9 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[640px]">
+          
+          <!-- Barra de Controles e Filtros -->
+          <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+            <div>
+              <h3 class="font-bold text-base text-slate-900 flex items-center space-x-2">
+                <i data-lucide="building-2" class="w-4 h-4 text-blue-600"></i>
+                <span>Vencimentos das Empresas</span>
+                <span id="total-badge" class="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">0</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Clique nos cabeçalhos das colunas para ordenar (A-Z, data ou número)</p>
+            </div>
+
+            <!-- Filtros Rápidos -->
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center space-x-1 bg-white p-1 rounded-xl border border-slate-200">
+                <button type="button" onclick="setFiltroStatus('todos')" id="filter-todos" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-600 text-white transition-all">Todos</button>
+                <button type="button" onclick="setFiltroStatus('vencido')" id="filter-vencido" class="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-red-600 transition-all">Vencidos</button>
+                <button type="button" onclick="setFiltroStatus('urgente')" id="filter-urgente" class="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-amber-600 transition-all">&le; 30 Dias</button>
+                <button type="button" onclick="setFiltroStatus('valido')" id="filter-valido" class="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-emerald-600 transition-all">Válidos</button>
+              </div>
+
+              <div class="relative">
+                <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
+                <input type="text" id="cert-search" oninput="filtrarCertificados()" placeholder="Buscar empresa, número ou CNPJ..." class="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-blue-500 w-64 shadow-sm">
+              </div>
+
+              <button onclick="carregarCertificados()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm" title="Recarregar tabela da planilha">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Atualizar</span>
+              </button>
+
+              <button id="btn-sync-rede" onclick="dispararSyncRede()" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-md shadow-amber-500/20" title="Verifica pastas na rede T:\ e atualiza apenas arquivos novos ou alterados">
+                <i data-lucide="scan-line" class="w-3.5 h-3.5"></i>
+                <span id="btn-sync-rede-label">Verificar Pastas (Rede)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Banner Informativo de Progresso da Sincronização -->
+          <div id="sync-progress-banner" class="hidden px-5 py-3 bg-amber-50 border-b border-amber-200 text-xs flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+              <span id="sync-progress-text" class="text-amber-900 font-medium">Iniciando verificação na rede...</span>
+            </div>
+            <div id="sync-progress-count" class="font-mono text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200">
+              0 / 0
+            </div>
+          </div>
+
+          <!-- Tabela com Colunas Ordenáveis -->
+          <div class="flex-1 overflow-x-auto max-h-[680px]">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-100/80 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10">
+                <tr>
+                  <th onclick="sortTable('empresa_num')" class="sortable px-4 py-3 w-28 whitespace-nowrap">
+                    <div class="flex items-center space-x-1">
+                      <span>Nº Empresa</span>
+                      <span id="sort-icon-empresa_num" class="text-slate-400 text-[10px]">&udarr;</span>
+                    </div>
+                  </th>
+                  <th onclick="sortTable('nome')" class="sortable px-4 py-3 min-w-[280px]">
+                    <div class="flex items-center space-x-1">
+                      <span>Razão Social / Nome</span>
+                      <span id="sort-icon-nome" class="text-slate-400 text-[10px]">&udarr;</span>
+                    </div>
+                  </th>
+                  <th onclick="sortTable('cnpj')" class="sortable px-4 py-3 w-40 whitespace-nowrap">
+                    <div class="flex items-center space-x-1">
+                      <span>CNPJ / CPF</span>
+                      <span id="sort-icon-cnpj" class="text-slate-400 text-[10px]">&udarr;</span>
+                    </div>
+                  </th>
+                  <th onclick="sortTable('vencimento_iso')" class="sortable px-4 py-3 w-32 whitespace-nowrap">
+                    <div class="flex items-center space-x-1">
+                      <span>Vencimento</span>
+                      <span id="sort-icon-vencimento_iso" class="text-slate-400 text-[10px]">&udarr;</span>
+                    </div>
+                  </th>
+                  <th onclick="sortTable('dias_restantes')" class="sortable px-4 py-3 w-36 whitespace-nowrap">
+                    <div class="flex items-center space-x-1">
+                      <span>Situação</span>
+                      <span id="sort-icon-dias_restantes" class="text-slate-400 text-[10px]">&udarr;</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="cert-table-tbody" class="divide-y divide-slate-100 text-slate-700">
+                <tr>
+                  <td colspan="5" class="px-4 py-12 text-center text-slate-400">
+                    Carregando certificados...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400 mt-auto">
+    <p>Painel de Certificados Digitais &bull; Sistema Contábil Local</p>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    let pfxBuffer = null;
+    let listaCertificadosGeral = [];
+    let filtroStatusAtivo = 'todos';
+    let sortColumn = 'dias_restantes'; // Ordenação padrão por vencimento mais próximo
+    let sortAsc = true;
+
+    const pfxDropzone = document.getElementById('pfx-dropzone');
+    const pfxFileInput = document.getElementById('pfx-file-input');
+    const pfxFileName = document.getElementById('pfx-file-name');
+    const pfxPassword = document.getElementById('pfx-password');
+    const btnReadPfx = document.getElementById('btn-read-pfx');
+    const pfxError = document.getElementById('pfx-error');
+    const pfxResult = document.getElementById('pfx-result');
+
+    if (pfxDropzone) {
+      pfxDropzone.onclick = () => pfxFileInput.click();
+
+      ['dragenter', 'dragover'].forEach(name => {
+        pfxDropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          pfxDropzone.classList.add('border-amber-500', 'bg-amber-50/50');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(name => {
+        pfxDropzone.addEventListener(name, (e) => {
+          e.preventDefault();
+          pfxDropzone.classList.remove('border-amber-500', 'bg-amber-50/50');
+        });
+      });
+
+      pfxDropzone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handlePfxFile(files[0]);
+      });
+
+      pfxFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handlePfxFile(e.target.files[0]);
+      });
+    }
+
+    function handlePfxFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        pfxBuffer = e.target.result;
+        pfxFileName.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        pfxFileName.classList.remove('hidden');
+        btnReadPfx.disabled = false;
+        pfxError.classList.add('hidden');
+        pfxResult.classList.add('hidden');
+        if (pfxPassword.value.trim().length > 0) {
+          processarPfxLocal();
+        } else {
+          pfxPassword.focus();
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    window.togglePfxPassword = function() {
+      const btn = document.getElementById('btn-toggle-pfx-pass');
+      if (pfxPassword.type === 'password') {
+        pfxPassword.type = 'text';
+        btn.innerText = 'Ocultar';
+      } else {
+        pfxPassword.type = 'password';
+        btn.innerText = 'Ver';
+      }
+    };
+
+    if (pfxPassword) {
+      pfxPassword.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !btnReadPfx.disabled) {
+          processarPfxLocal();
+        }
+      });
+    }
+
+    window.processarPfxLocal = function() {
+      pfxError.classList.add('hidden');
+      pfxResult.classList.add('hidden');
+
+      if (!pfxBuffer) {
+        showPfxError("Selecione um arquivo .pfx primeiro.");
+        return;
+      }
+
+      if (typeof forge === 'undefined') {
+        showPfxError("Biblioteca de criptografia ainda carregando. Aguarde 2 segundos.");
+        return;
+      }
+
+      try {
+        const password = pfxPassword.value;
+        const bytes = new Uint8Array(pfxBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+
+        const p12Der = forge.util.createBuffer(binary, 'raw');
+        const p12Asn1 = forge.asn1.fromDer(p12Der);
+        const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, false, password);
+
+        let cert = null;
+        for (let i = 0; i < p12.safeContents.length; i++) {
+          const safe = p12.safeContents[i];
+          for (let j = 0; j < safe.safeBags.length; j++) {
+            const bag = safe.safeBags[j];
+            if (bag.cert) {
+              cert = bag.cert;
+              break;
+            }
+          }
+          if (cert) break;
+        }
+
+        if (!cert) {
+          showPfxError("Nenhum certificado válido encontrado no arquivo PFX.");
+          return;
+        }
+
+        let commonName = "";
+        cert.subject.attributes.forEach(attr => {
+          if (attr.name === 'commonName' || attr.type === '2.5.4.3') {
+            commonName = attr.value;
+          }
+        });
+
+        let issuerName = "";
+        cert.issuer.attributes.forEach(attr => {
+          if (attr.name === 'commonName' || attr.type === '2.5.4.3') {
+            issuerName = attr.value;
+          }
+        });
+
+        let razaoSocial = commonName;
+        let docSemPontos = "";
+        let docFormatado = "Não informado";
+
+        const cnpjMatch = commonName.match(/^(.*?):(\d{14})$/);
+        const cpfMatch = commonName.match(/^(.*?):(\d{11})$/);
+
+        if (cnpjMatch) {
+          razaoSocial = cnpjMatch[1].trim();
+          docSemPontos = cnpjMatch[2];
+          docFormatado = `${docSemPontos.slice(0,2)}.${docSemPontos.slice(2,5)}.${docSemPontos.slice(5,8)}/${docSemPontos.slice(8,12)}-${docSemPontos.slice(12,14)}`;
+        } else if (cpfMatch) {
+          razaoSocial = cpfMatch[1].trim();
+          docSemPontos = cpfMatch[2];
+          docFormatado = `${docSemPontos.slice(0,3)}.${docSemPontos.slice(3,6)}.${docSemPontos.slice(6,9)}-${docSemPontos.slice(9,11)} (CPF)`;
+        }
+
+        const notBefore = cert.validity.notBefore;
+        const notAfter = cert.validity.notAfter;
+        const now = new Date();
+        const diffDays = Math.ceil((notAfter - now) / (1000 * 60 * 60 * 24));
+
+        const pad = n => String(n).padStart(2, '0');
+        const formatDate = (d) => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        const vencimentoSemPontos = `${pad(notAfter.getDate())}${pad(notAfter.getMonth()+1)}${notAfter.getFullYear()}`;
+        const padraoCompleto = `${razaoSocial} - ${docSemPontos} - ${vencimentoSemPontos}`;
+
+        document.getElementById('pfx-res-nome').innerText = razaoSocial;
+        document.getElementById('pfx-res-padrao').innerText = padraoCompleto;
+        document.getElementById('pfx-res-doc').innerText = docFormatado;
+        document.getElementById('pfx-res-validade').innerText = `${formatDate(notBefore)} até ${formatDate(notAfter)}`;
+
+        const statusEl = document.getElementById('pfx-res-status');
+        if (diffDays < 0) {
+          statusEl.innerHTML = `<span class="inline-block px-2 py-0.5 rounded-full font-bold bg-red-100 text-red-800 text-[10px]">EXPIRADO (${Math.abs(diffDays)}d)</span>`;
+        } else if (diffDays <= 30) {
+          statusEl.innerHTML = `<span class="inline-block px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 text-[10px]">Vence em ${diffDays}d</span>`;
+        } else {
+          statusEl.innerHTML = `<span class="inline-block px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 text-[10px]">Válido (${diffDays}d)</span>`;
+        }
+
+        pfxResult.classList.remove('hidden');
+      } catch (err) {
+        showPfxError("Senha incorreta ou arquivo PFX corrompido.");
+      }
+    };
+
+    function showPfxError(msg) {
+      pfxError.innerText = msg;
+      pfxError.classList.remove('hidden');
+    }
+
+    window.copiarPadraoPfx = function() {
+      const text = document.getElementById('pfx-res-padrao').innerText;
+      if (text) {
+        navigator.clipboard.writeText(text);
+        const btn = document.getElementById('btn-copy-padrao');
+        btn.innerText = "Copiado!";
+        setTimeout(() => btn.innerText = "Copiar", 1500);
+      }
+    };
+
+    // ==========================================
+    // CARREGAMENTO, FILTRAGEM E ORDENAÇÃO
+    // ==========================================
+    window.carregarCertificados = async function() {
+      const tbody = document.getElementById('cert-table-tbody');
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-400">Carregando dados da planilha...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/certificados/listar');
+        const data = await res.json();
+
+        if (data.success) {
+          listaCertificadosGeral = data.certificados || [];
+          aplicarFiltrosEOrdenar();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-red-500 font-semibold">${data.error || 'Erro ao carregar dados.'}</td></tr>`;
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-red-500">Erro de conexão com o servidor.</td></tr>`;
+      }
+    };
+
+    window.setFiltroStatus = function(status) {
+      filtroStatusAtivo = status;
+      ['todos', 'vencido', 'urgente', 'valido'].forEach(s => {
+        const btn = document.getElementById(`filter-${s}`);
+        if (!btn) return;
+        if (s === status) {
+          btn.className = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-600 text-white transition-all shadow-sm';
+        } else {
+          btn.className = 'px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all';
+        }
+      });
+      aplicarFiltrosEOrdenar();
+    };
+
+    window.sortTable = function(col) {
+      if (sortColumn === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortColumn = col;
+        sortAsc = true;
+      }
+      atualizarIconesOrdenacao();
+      aplicarFiltrosEOrdenar();
+    };
+
+    function atualizarIconesOrdenacao() {
+      ['empresa_num', 'nome', 'cnpj', 'vencimento_iso', 'dias_restantes'].forEach(c => {
+        const icon = document.getElementById(`sort-icon-${c}`);
+        if (!icon) return;
+        if (c === sortColumn) {
+          icon.innerHTML = sortAsc ? '▲' : '▼';
+          icon.className = 'text-blue-600 text-[10px] font-bold';
+        } else {
+          icon.innerHTML = '&udarr;';
+          icon.className = 'text-slate-400 text-[10px]';
+        }
+      });
+    }
+
+    function aplicarFiltrosEOrdenar() {
+      const q = document.getElementById('cert-search').value.toLowerCase().trim();
+      
+      let filtrados = listaCertificadosGeral.filter(c => {
+        // Filtro de Busca Texto
+        const matchText = !q || 
+          (c.nome && c.nome.toLowerCase().includes(q)) ||
+          (c.cnpj && c.cnpj.toLowerCase().includes(q)) ||
+          (c.empresa_num && c.empresa_num.toLowerCase().includes(q));
+
+        // Filtro de Status
+        const matchStatus = (filtroStatusAtivo === 'todos') || (c.status === filtroStatusAtivo);
+
+        return matchText && matchStatus;
+      });
+
+      // Ordenação
+      filtrados.sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+
+        if (sortColumn === 'empresa_num') {
+          // Ordena numericamente se possível
+          let numA = parseInt(valA) || 999999;
+          let numB = parseInt(valB) || 999999;
+          return sortAsc ? (numA - numB) : (numB - numA);
+        }
+
+        if (sortColumn === 'dias_restantes') {
+          let dA = (valA !== null && valA !== undefined) ? valA : 999999;
+          let dB = (valB !== null && valB !== undefined) ? valB : 999999;
+          return sortAsc ? (dA - dB) : (dB - dA);
+        }
+
+        valA = (valA || '').toString().toLowerCase();
+        valB = (valB || '').toString().toLowerCase();
+
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
+      });
+
+      document.getElementById('total-badge').innerText = `${filtrados.length} registros`;
+      renderTabela(filtrados);
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById('cert-table-tbody');
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-400">Nenhum certificado encontrado para os critérios selecionados.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(c => {
+        let badge = '';
+        if (c.status === 'vencido') {
+          badge = `<span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-red-100 text-red-800 border border-red-200">Vencido (${Math.abs(c.dias_restantes)}d)</span>`;
+        } else if (c.status === 'urgente') {
+          badge = `<span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">Vence em ${c.dias_restantes}d</span>`;
+        } else if (c.status === 'valido') {
+          badge = `<span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Válido (${c.dias_restantes}d)</span>`;
+        } else {
+          badge = `<span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">-</span>`;
+        }
+
+        const codBadge = c.empresa_num ? 
+          `<span class="px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-mono font-bold">${c.empresa_num}</span>` : 
+          `<span class="text-slate-300">-</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            <td class="px-4 py-3">${codBadge}</td>
+            <td class="px-4 py-3 font-semibold text-slate-900">${c.nome}</td>
+            <td class="px-4 py-3 font-mono text-slate-500">${c.cnpj || '-'}</td>
+            <td class="px-4 py-3 font-bold text-slate-700">${c.vencimento || '-'}</td>
+            <td class="px-4 py-3">${badge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.filtrarCertificados = function() {
+      aplicarFiltrosEOrdenar();
+    };
+
+    // ==============================================
+    // Sincronização Incremental da Pasta na Rede T:\
+    // ==============================================
+    let syncInterval = null;
+
+    async function dispararSyncRede() {
+      const btn = document.getElementById('btn-sync-rede');
+      const label = document.getElementById('btn-sync-rede-label');
+      const banner = document.getElementById('sync-progress-banner');
+      const txt = document.getElementById('sync-progress-text');
+      const count = document.getElementById('sync-progress-count');
+
+      try {
+        btn.disabled = true;
+        btn.classList.add('opacity-70', 'cursor-not-allowed');
+        label.innerText = 'Verificando...';
+        banner.classList.remove('hidden');
+        txt.innerText = 'Iniciando varredura incremental de certificados...';
+        count.innerText = '...';
+
+        const res = await fetch('/api/certificados/sincronizar', { method: 'POST' });
+        const data = await res.json();
+        
+        if (!data.success) {
+          alert(data.message || 'Erro ao iniciar varredura.');
+          resetarBotaoSync();
+          return;
+        }
+
+        // Inicia polling de progresso
+        syncInterval = setInterval(consultarStatusSync, 1000);
+      } catch (err) {
+        alert('Erro de conexão ao solicitar varredura.');
+        resetarBotaoSync();
+      }
+    }
+
+    async function consultarStatusSync() {
+      try {
+        const res = await fetch('/api/certificados/status-sync');
+        const st = await res.json();
+        const banner = document.getElementById('sync-progress-banner');
+        const txt = document.getElementById('sync-progress-text');
+        const count = document.getElementById('sync-progress-count');
+
+        if (st.running) {
+          banner.classList.remove('hidden');
+          txt.innerText = st.mensagem || 'Processando certificados...';
+          count.innerText = st.total > 0 ? `${st.progresso_atual} / ${st.total}` : `${st.progresso_atual}`;
+        } else {
+          // Concluiu
+          clearInterval(syncInterval);
+          syncInterval = null;
+          resetarBotaoSync();
+
+          if (st.ultimo_resultado && st.ultimo_resultado.sucesso) {
+            const r = st.ultimo_resultado;
+            txt.innerText = `Varredura concluída! ${r.lidos_novos_ou_modificados} arquivos novos/alterados lidos, ${r.inalterados_em_cache} em cache inalterados. Planilha atualizada (${r.planilha_atualizados} atualizados, ${r.planilha_inseridos} inseridos).`;
+            count.innerText = 'Concluído';
+            
+            // Recarrega a tabela imediatamente
+            carregarCertificados();
+
+            // Oculta o banner após 8 segundos
+            setTimeout(() => {
+              banner.classList.add('hidden');
+            }, 8000);
+          } else {
+            txt.innerText = st.mensagem || 'Varredura finalizada.';
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao consultar status da sincronização:', e);
+      }
+    }
+
+    function resetarBotaoSync() {
+      const btn = document.getElementById('btn-sync-rede');
+      const label = document.getElementById('btn-sync-rede-label');
+      if (btn && label) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+        label.innerText = 'Verificar Pastas (Rede)';
+      }
+    }
+
+    // Inicia carregando os dados e checa se já havia sincronização rodando
+    atualizarIconesOrdenacao();
+    carregarCertificados();
+    consultarStatusSync();
+  </script>
+</body>
+</html>

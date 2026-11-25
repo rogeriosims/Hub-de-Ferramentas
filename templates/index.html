@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GhostPDF Studio | Central Inteligente de PDFs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .drag-active {
+      border-color: #3b82f6 !important;
+      background-color: #eff6ff !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <i data-lucide="file-down" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">GhostPDF Studio</h1>
+          <p class="text-xs text-slate-500 font-medium">Compressão, Fusão & Automação com Ghostscript</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-3">
+        <a href="/" class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 flex items-center space-x-1.5 transition-all shadow-sm">
+          <i data-lucide="layout-grid" class="w-4 h-4 text-slate-600"></i>
+          <span>Página Inicial</span>
+        </a>
+
+        <div id="gs-badge" class="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span>Verificando Ghostscript...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 flex space-x-2 sm:space-x-6 overflow-x-auto">
+      <button id="tab-btn-compress" onclick="switchTab('compress')" class="py-3.5 border-b-2 border-blue-600 text-blue-600 font-bold text-sm flex items-center space-x-2 whitespace-nowrap transition-all">
+        <i data-lucide="minimize-2" class="w-4 h-4"></i>
+        <span>Comprimir PDFs</span>
+      </button>
+
+      <button id="tab-btn-merge" onclick="switchTab('merge')" class="py-3.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold text-sm flex items-center space-x-2 whitespace-nowrap transition-all">
+        <i data-lucide="files" class="w-4 h-4"></i>
+        <span>Mesclar PDFs</span>
+      </button>
+
+      <button id="tab-btn-split" onclick="switchTab('split')" class="py-3.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold text-sm flex items-center space-x-2 whitespace-nowrap transition-all">
+        <i data-lucide="scissors" class="w-4 h-4"></i>
+        <span>Dividir / Extrair</span>
+      </button>
+
+      <button id="tab-btn-images" onclick="switchTab('images')" class="py-3.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold text-sm flex items-center space-x-2 whitespace-nowrap transition-all">
+        <i data-lucide="images" class="w-4 h-4"></i>
+        <span>Imagens para PDF</span>
+      </button>
+
+      <button id="tab-btn-watcher" onclick="switchTab('watcher')" class="py-3.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold text-sm flex items-center space-x-2 whitespace-nowrap transition-all">
+        <i data-lucide="folder-sync" class="w-4 h-4 text-emerald-600"></i>
+        <span>Pasta Monitorada</span>
+        <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Auto</span>
+      </button>
+
+      <div class="flex items-center space-x-2 ml-auto shrink-0 my-auto">
+        <a href="/conciliacao" target="_blank" class="py-2 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold text-xs flex items-center space-x-1.5 border border-indigo-200 transition-all">
+          <i data-lucide="calculator" class="w-4 h-4 text-indigo-600"></i>
+          <span>Conciliação Bancária</span>
+          <i data-lucide="external-link" class="w-3 h-3 text-indigo-500"></i>
+        </a>
+
+        <a href="/certificados" target="_blank" class="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs flex items-center space-x-1.5 border border-amber-200 transition-all">
+          <i data-lucide="shield-check" class="w-4 h-4 text-amber-600"></i>
+          <span>App Certificados</span>
+          <i data-lucide="external-link" class="w-3 h-3 text-amber-500"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
+
+    <!-- ========================================== -->
+    <!-- ABA 1: COMPRIMIR PDFS                      -->
+    <!-- ========================================== -->
+    <div id="tab-content-compress" class="space-y-8">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Reduza o tamanho dos seus PDFs</h2>
+        <p class="text-slate-600 text-sm">
+          Otimização com motor Ghostscript 10. Otimize seus documentos para envio por e-mail, SEI ou portais oficiais sem perder a nitidez.
+        </p>
+      </div>
+
+      <!-- Presets -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i>
+            <span class="text-sm font-bold text-slate-800">Nível de Compressão</span>
+          </div>
+          <span class="text-xs text-slate-400">Escolha o balanço entre tamanho do arquivo e resolução</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <label class="cursor-pointer relative flex flex-col p-4 rounded-xl border border-slate-200 hover:border-blue-400 transition-all preset-card">
+            <input type="radio" name="preset" value="screen" class="sr-only">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded">72 DPI</span>
+              <span class="radio-indicator w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center"></span>
+            </div>
+            <span class="font-bold text-sm text-slate-900">Super Compacto</span>
+            <span class="text-xs text-slate-500 mt-1 leading-relaxed">Máxima redução de MB. Para formulários com limites estritos (ex: SEI/PJe).</span>
+          </label>
+
+          <label class="cursor-pointer relative flex flex-col p-4 rounded-xl border-2 border-blue-600 bg-blue-50/30 transition-all preset-card selected">
+            <input type="radio" name="preset" value="ebook" checked class="sr-only">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded">150 DPI</span>
+              <span class="radio-indicator w-4 h-4 rounded-full border-4 border-blue-600 bg-white"></span>
+            </div>
+            <div class="flex items-center space-x-1">
+              <span class="font-bold text-sm text-slate-900">Equilibrado</span>
+              <span class="text-[10px] bg-blue-600 text-white font-bold px-1.5 py-0.2 rounded-full">Recomendado</span>
+            </div>
+            <span class="text-xs text-slate-500 mt-1 leading-relaxed">Ideal para leitura em telas. Redução média de 80% a 95%.</span>
+          </label>
+
+          <label class="cursor-pointer relative flex flex-col p-4 rounded-xl border border-slate-200 hover:border-blue-400 transition-all preset-card">
+            <input type="radio" name="preset" value="printer" class="sr-only">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">300 DPI</span>
+              <span class="radio-indicator w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center"></span>
+            </div>
+            <span class="font-bold text-sm text-slate-900">Impressão</span>
+            <span class="text-xs text-slate-500 mt-1 leading-relaxed">Alta fidelidade adequada para impressão física.</span>
+          </label>
+
+          <label class="cursor-pointer relative flex flex-col p-4 rounded-xl border border-slate-200 hover:border-blue-400 transition-all preset-card">
+            <input type="radio" name="preset" value="prepress" class="sr-only">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">300+ DPI</span>
+              <span class="radio-indicator w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center"></span>
+            </div>
+            <span class="font-bold text-sm text-slate-900">Pré-impressão</span>
+            <span class="text-xs text-slate-500 mt-1 leading-relaxed">Preservação exata de cores e elementos gráficos.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div id="dropzone" class="border-2 border-dashed border-slate-300 rounded-3xl p-10 bg-white text-center hover:border-blue-500 hover:bg-slate-50/80 transition-all cursor-pointer shadow-sm relative group">
+        <input type="file" id="file-input" multiple accept=".pdf" class="hidden">
+        
+        <div class="flex flex-col items-center justify-center space-y-4 pointer-events-none">
+          <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="cloud-upload" class="w-8 h-8"></i>
+          </div>
+          
+          <div class="space-y-1">
+            <p class="text-base font-semibold text-slate-800">
+              Arraste e solte seus PDFs aqui ou <span class="text-blue-600 underline">clique para selecionar</span>
+            </p>
+            <p class="text-xs text-slate-400">Suporta múltiplos PDFs simultaneamente (ex: PPPs, laudos, contratos)</p>
+          </div>
+
+          <div class="flex items-center space-x-4 text-xs text-slate-500 pt-2">
+            <span class="flex items-center space-x-1">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+              <span>100% Local e Seguro</span>
+            </span>
+            <span class="flex items-center space-x-1">
+              <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+              <span>Ghostscript Nativo</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Banner -->
+      <div id="summary-banner" class="hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-800 text-white rounded-2xl p-6 shadow-lg shadow-blue-500/10 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-6">
+          <div>
+            <p class="text-xs text-blue-200 font-medium">Documentos</p>
+            <p id="stat-count" class="text-2xl font-extrabold">0</p>
+          </div>
+          <div class="h-8 w-px bg-blue-400/30"></div>
+          <div>
+            <p class="text-xs text-blue-200 font-medium">Tamanho Original</p>
+            <p id="stat-orig-size" class="text-2xl font-extrabold">0 MB</p>
+          </div>
+          <div class="h-8 w-px bg-blue-400/30"></div>
+          <div>
+            <p class="text-xs text-blue-200 font-medium">Tamanho Otimizado</p>
+            <p id="stat-new-size" class="text-2xl font-extrabold text-emerald-300">0 MB</p>
+          </div>
+          <div class="h-8 w-px bg-blue-400/30"></div>
+          <div>
+            <p class="text-xs text-blue-200 font-medium">Espaço Economizado</p>
+            <div class="flex items-baseline space-x-2">
+              <p id="stat-saved-bytes" class="text-2xl font-extrabold text-emerald-300">0 MB</p>
+              <span id="stat-saved-percent" class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-download-all" class="px-5 py-2.5 bg-white text-blue-700 font-bold text-sm rounded-xl hover:bg-blue-50 shadow-md flex items-center space-x-2 transition-all">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Baixar Todos (.ZIP)</span>
+        </button>
+      </div>
+
+      <!-- File List -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+            <i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>
+            <span>Fila de Documentos</span>
+          </h3>
+          <button id="btn-clear" class="text-xs text-slate-400 hover:text-slate-600 hidden font-medium">
+            Limpar lista
+          </button>
+        </div>
+
+        <div id="file-list" class="divide-y divide-slate-100">
+          <div id="empty-state" class="py-12 text-center text-slate-400 space-y-2">
+            <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-300 stroke-[1.5]"></i>
+            <p class="text-sm">Nenhum arquivo na fila de processamento.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ABA 2: MESCLAR PDFS (FEATURE 1)            -->
+    <!-- ========================================== -->
+    <div id="tab-content-merge" class="hidden space-y-8">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Unir e Mesclar Múltiplos PDFs</h2>
+        <p class="text-slate-600 text-sm">
+          Junte documentos separados (ex: vários PPPs, contratos, anexos) em um único PDF limpo, ordenado e com compressão Ghostscript integrada.
+        </p>
+      </div>
+
+      <!-- Options -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center space-x-2 border-b border-slate-100 pb-3">
+          <i data-lucide="settings" class="w-4 h-4 text-blue-600"></i>
+          <span class="text-sm font-bold text-slate-800">Opções da Mesclagem</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Arquivo Final</label>
+            <input type="text" id="merge-title" value="documento_unificado.pdf" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Compressão Ghostscript do Arquivo Final</label>
+            <select id="merge-preset" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 bg-white">
+              <option value="ebook" selected>Equilibrado (150 DPI) [Recomendado]</option>
+              <option value="screen">Super Compacto (72 DPI)</option>
+              <option value="printer">Impressão (300 DPI)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dropzone Merge -->
+      <div id="merge-dropzone" class="border-2 border-dashed border-slate-300 rounded-3xl p-8 bg-white text-center hover:border-blue-500 hover:bg-slate-50/80 transition-all cursor-pointer shadow-sm relative group">
+        <input type="file" id="merge-file-input" multiple accept=".pdf" class="hidden">
+        <div class="flex flex-col items-center justify-center space-y-3 pointer-events-none">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="file-plus-2" class="w-7 h-7"></i>
+          </div>
+          <div class="space-y-1">
+            <p class="text-base font-semibold text-slate-800">
+              Arraste os PDFs para mesclar ou <span class="text-blue-600 underline">clique para selecionar</span>
+            </p>
+            <p class="text-xs text-slate-400">Selecione pelo menos 2 arquivos &bull; Você poderá definir a ordem antes de unir</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Merge Queue -->
+      <div id="merge-queue-section" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+            <i data-lucide="list-ordered" class="w-4 h-4 text-indigo-600"></i>
+            <span>Ordem dos Documentos (<span id="merge-count-badge">0</span> selecionados)</span>
+          </h3>
+          <div class="flex items-center space-x-3">
+            <button onclick="document.getElementById('merge-file-input').click()" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Adicionar Mais</span>
+            </button>
+            <span class="text-slate-300">&bull;</span>
+            <button onclick="clearMergeList()" class="text-xs font-semibold text-red-500 hover:text-red-700">Limpar</button>
+          </div>
+        </div>
+
+        <div id="merge-list" class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 shadow-sm overflow-hidden">
+        </div>
+
+        <div class="pt-4 flex justify-end">
+          <button id="btn-run-merge" onclick="runMergePdfs()" class="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 flex items-center space-x-2 transition-all">
+            <i data-lucide="combine" class="w-5 h-5"></i>
+            <span id="btn-merge-label">Mesclar e Otimizar PDFs</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Result Card Merge -->
+      <div id="merge-result-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 id="merge-result-title" class="font-bold text-base text-slate-900 leading-tight">documento_unificado.pdf</h4>
+              <p class="text-xs text-slate-500 mt-0.5">
+                <span id="merge-result-pages">0 páginas</span> &bull; 
+                <span class="line-through text-slate-400" id="merge-result-orig">0 MB</span>
+                <i data-lucide="arrow-right" class="w-3 h-3 inline text-slate-400 mx-1"></i>
+                <span class="font-bold text-slate-800" id="merge-result-new">0 MB</span> &bull; 
+                <span class="text-slate-400" id="merge-result-duration">0s</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <span id="merge-result-badge" class="text-xs font-extrabold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              -0%
+            </span>
+            <button id="btn-merge-preview" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+              <span>Ver PDF</span>
+            </button>
+            <a id="btn-merge-download" href="#" download class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition-all">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Baixar PDF</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ABA 3: DIVIDIR / EXTRAIR (FEATURE 2)       -->
+    <!-- ========================================== -->
+    <div id="tab-content-split" class="hidden space-y-8">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Dividir ou Extrair Páginas de PDF</h2>
+        <p class="text-slate-600 text-sm">
+          Extraia intervalos específicos de páginas (ex: apenas as páginas 1 a 3 de um laudo longo) ou separe cada página em arquivos individuais.
+        </p>
+      </div>
+
+      <!-- Dropzone Split -->
+      <div id="split-dropzone" class="border-2 border-dashed border-slate-300 rounded-3xl p-8 bg-white text-center hover:border-blue-500 hover:bg-slate-50/80 transition-all cursor-pointer shadow-sm relative group">
+        <input type="file" id="split-file-input" accept=".pdf" class="hidden">
+        <div class="flex flex-col items-center justify-center space-y-3 pointer-events-none">
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="file-symlink" class="w-7 h-7"></i>
+          </div>
+          <div class="space-y-1">
+            <p class="text-base font-semibold text-slate-800">
+              Selecione o PDF para dividir ou <span class="text-blue-600 underline">clique para procurar</span>
+            </p>
+            <p class="text-xs text-slate-400">Suporta qualquer arquivo PDF com múltiplas páginas</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Loaded Details & Controls -->
+      <div id="split-config-card" class="hidden bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <i data-lucide="file-text" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <p id="split-file-name" class="font-bold text-sm text-slate-800">documento.pdf</p>
+              <p class="text-xs text-slate-400">
+                <span id="split-total-pages" class="font-semibold text-blue-600">0 páginas</span> &bull; 
+                <span id="split-file-size">0 MB</span>
+              </p>
+            </div>
+          </div>
+          <button onclick="clearSplitFile()" class="text-xs text-red-500 hover:text-red-700 font-semibold">Trocar arquivo</button>
+        </div>
+
+        <div class="space-y-4">
+          <p class="text-xs font-bold text-slate-700 uppercase tracking-wider">Escolha como deseja dividir:</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Mode 1: Range -->
+            <label class="cursor-pointer relative flex flex-col p-4 rounded-xl border-2 border-blue-600 bg-blue-50/20 split-mode-card" onclick="selectSplitMode('range')">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-sm text-slate-900">Extrair Intervalo Específico</span>
+                <input type="radio" name="split-mode" value="range" checked class="text-blue-600">
+              </div>
+              <p class="text-xs text-slate-500 mb-3">Cria um novo PDF contendo apenas as páginas que você escolher.</p>
+              
+              <div class="mt-auto">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Páginas a extrair (ex: 1-3, 5):</label>
+                <input type="text" id="split-range-input" value="1" placeholder="Ex: 1-3, 5, 8" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:border-blue-500 bg-white">
+              </div>
+            </label>
+
+            <!-- Mode 2: All -->
+            <label class="cursor-pointer relative flex flex-col p-4 rounded-xl border border-slate-200 hover:border-blue-400 split-mode-card" onclick="selectSplitMode('all')">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-sm text-slate-900">Separar Todas as Páginas</span>
+                <input type="radio" name="split-mode" value="all" class="text-blue-600">
+              </div>
+              <p class="text-xs text-slate-500">Transforma cada página em um PDF separado (ex: pag_01.pdf, pag_02.pdf) e entrega tudo em um arquivo ZIP.</p>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end">
+          <button id="btn-run-split" onclick="runSplitPdf()" class="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 flex items-center space-x-2 transition-all">
+            <i data-lucide="scissors" class="w-5 h-5"></i>
+            <span id="btn-split-label">Processar e Extrair</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Result Card Split -->
+      <div id="split-result-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 id="split-result-title" class="font-bold text-base text-slate-900 leading-tight">documento_extraido.pdf</h4>
+              <p class="text-xs text-slate-500 mt-0.5">
+                <span id="split-result-pages">0 páginas</span> &bull; 
+                <span class="font-bold text-slate-800" id="split-result-size">0 MB</span> &bull; 
+                <span class="text-slate-400" id="split-result-duration">0s</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <button id="btn-split-preview" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+              <span>Ver PDF</span>
+            </button>
+            <a id="btn-split-download" href="#" download class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition-all">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Baixar Arquivo</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ABA 4: IMAGENS PARA PDF (FEATURE 4)        -->
+    <!-- ========================================== -->
+    <div id="tab-content-images" class="hidden space-y-8">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Converter Fotos & Imagens para PDF</h2>
+        <p class="text-slate-600 text-sm">
+          Junte recibos, fotos do celular ou digitalizações (JPG, PNG, WEBP) em um único arquivo PDF compacto, enquadrado em folha A4 e pronto para envio.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center space-x-2 border-b border-slate-100 pb-3">
+          <i data-lucide="settings-2" class="w-4 h-4 text-blue-600"></i>
+          <span class="text-sm font-bold text-slate-800">Opções do Documento PDF</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Modo de Saída</label>
+            <select id="img-output-mode" onchange="toggleImgTitleLabel()" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 bg-white font-medium text-slate-800">
+              <option value="single" selected>📑 PDF Único (Unificar todas)</option>
+              <option value="individual">📦 PDFs Individuais (1 PDF por foto em ZIP)</option>
+            </select>
+          </div>
+          <div>
+            <label id="lbl-img-pdf-title" class="block text-xs font-semibold text-slate-600 mb-1">Nome do Arquivo PDF</label>
+            <input type="text" id="img-pdf-title" value="documento_fotos.pdf" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Formato da Página</label>
+            <select id="img-page-size" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 bg-white">
+              <option value="a4" selected>Folha A4 (Padrão de Documento)</option>
+              <option value="fit">Tamanho Original da Imagem</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Orientação da Folha</label>
+            <select id="img-orientation" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 bg-white">
+              <option value="auto" selected>Automática (adapta cada foto)</option>
+              <option value="portrait">Retrato (Vertical)</option>
+              <option value="landscape">Paisagem (Horizontal)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Compressão Ghostscript</label>
+            <select id="img-preset" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 bg-white">
+              <option value="ebook" selected>Equilibrado (150 DPI) [Recomendado]</option>
+              <option value="screen">Super Compacto (72 DPI)</option>
+              <option value="printer">Impressão (300 DPI)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Seção de OCR Opcional -->
+        <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+          <label class="flex items-center space-x-2.5 cursor-pointer select-none">
+            <input type="checkbox" id="img-enable-ocr" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+            <span class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+              <i data-lucide="scan-text" class="w-4 h-4 text-indigo-600"></i>
+              <span>Reconhecer Texto com OCR (PDF Pesquisável / Copiável)</span>
+            </span>
+            <span class="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold border border-indigo-100">Tesseract 5</span>
+          </label>
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="text-slate-500">Idioma do OCR:</span>
+            <select id="img-ocr-lang" class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-blue-500 font-medium">
+              <option value="por" selected>Português (Brasil)</option>
+              <option value="eng">Inglês</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="img-dropzone" class="border-2 border-dashed border-slate-300 rounded-3xl p-8 bg-white text-center hover:border-blue-500 hover:bg-slate-50/80 transition-all cursor-pointer shadow-sm relative group">
+        <input type="file" id="img-file-input" multiple accept="image/jpeg,image/png,image/webp,image/bmp" class="hidden">
+        <div class="flex flex-col items-center justify-center space-y-3 pointer-events-none">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="image-plus" class="w-7 h-7"></i>
+          </div>
+          <div class="space-y-1">
+            <p class="text-base font-semibold text-slate-800">
+              Arraste suas fotos aqui ou <span class="text-blue-600 underline">clique para selecionar</span>
+            </p>
+            <p class="text-xs text-slate-400">JPG, PNG, WEBP, BMP &bull; Você poderá reordenar as fotos antes de gerar o PDF</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="img-gallery-section" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+            <i data-lucide="list-ordered" class="w-4 h-4 text-indigo-600"></i>
+            <span>Ordem das Páginas no PDF (<span id="img-count-badge">0</span> fotos)</span>
+          </h3>
+          <div class="flex items-center space-x-3">
+            <button onclick="document.getElementById('img-file-input').click()" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Adicionar Mais</span>
+            </button>
+            <span class="text-slate-300">&bull;</span>
+            <button onclick="clearImages()" class="text-xs font-semibold text-red-500 hover:text-red-700">Limpar Todas</button>
+          </div>
+        </div>
+
+        <div id="img-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+
+        <div class="pt-4 flex justify-end">
+          <button id="btn-convert-images" onclick="convertImagesToPdf()" class="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 flex items-center space-x-2 transition-all">
+            <i data-lucide="file-check-2" class="w-5 h-5"></i>
+            <span id="btn-convert-label">Gerar e Otimizar PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="img-result-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <i data-lucide="file-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 id="img-result-title" class="font-bold text-base text-slate-900 leading-tight">documento.pdf</h4>
+              <p class="text-xs text-slate-500 mt-0.5">
+                <span id="img-result-pages">0 páginas</span> &bull; 
+                <span class="line-through text-slate-400" id="img-result-orig">0 MB</span>
+                <i data-lucide="arrow-right" class="w-3 h-3 inline text-slate-400 mx-1"></i>
+                <span class="font-bold text-slate-800" id="img-result-new">0 MB</span> &bull; 
+                <span class="text-slate-400" id="img-result-duration">0s</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <span id="img-result-badge" class="text-xs font-extrabold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">-0%</span>
+            <button id="btn-img-preview" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+              <span>Ver PDF</span>
+            </button>
+            <a id="btn-img-download" href="#" download class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition-all">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Baixar PDF</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ABA 5: PASTA MONITORADA (FEATURE 7 - AUTO) -->
+    <!-- ========================================== -->
+    <div id="tab-content-watcher" class="hidden space-y-8">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Monitoramento Automático de Pasta (Hot Folder)</h2>
+        <p class="text-slate-600 text-sm">
+          Basta salvar ou arrastar qualquer PDF para a pasta de entrada. O Ghostscript comprime automaticamente em segundo plano e entrega o arquivo reduzido pronto para envio!
+        </p>
+      </div>
+
+      <!-- Status & Toggle Card -->
+      <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-6">
+        <div class="flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+            <i data-lucide="activity" class="w-7 h-7 animate-pulse"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span id="watcher-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span id="watcher-status-title" class="font-extrabold text-lg">Monitoramento em Tempo Real Ativo</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Verificando novos PDFs a cada 2 segundos via Ghostscript.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-6">
+          <div class="text-right">
+            <p class="text-xs text-slate-400">Total Otimizado Hoje</p>
+            <p id="watcher-stat-count" class="text-2xl font-black text-white">0 arquivos</p>
+          </div>
+          <div class="h-10 w-px bg-slate-800"></div>
+          <div class="text-right">
+            <p class="text-xs text-slate-400">Espaço Economizado</p>
+            <p id="watcher-stat-saved" class="text-2xl font-black text-emerald-400">0 MB</p>
+          </div>
+          <button id="btn-toggle-watcher" onclick="toggleWatcher()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700 transition-all">
+            Pausar
+          </button>
+        </div>
+      </div>
+
+      <!-- 3 Quick Folder Cards (Open in Windows Explorer) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Input Folder -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col justify-between space-y-4 hover:border-blue-300 transition-all">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">Passo 1 &bull; Entrada</span>
+              <i data-lucide="arrow-down-to-dot" class="w-5 h-5 text-blue-600"></i>
+            </div>
+            <h4 class="font-bold text-sm text-slate-900">1_Entrada_Para_Comprimir</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Arraste ou salve qualquer PDF pesado aqui. O sistema detecta e começa a comprimir na hora.
+            </p>
+          </div>
+          <button onclick="openWatcherFolder('in')" class="w-full py-2.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl flex items-center justify-center space-x-2 transition-all">
+            <i data-lucide="folder-open" class="w-4 h-4"></i>
+            <span>Abrir Pasta de Entrada</span>
+          </button>
+        </div>
+
+        <!-- Output Folder -->
+        <div class="bg-white p-5 rounded-2xl border-2 border-emerald-500/30 bg-emerald-50/20 shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-500 transition-all">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">Passo 2 &bull; Entrega</span>
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i>
+            </div>
+            <h4 class="font-bold text-sm text-slate-900">2_Otimizados</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Seus arquivos reduzidos aparecem aqui como <code>*_otimizado.pdf</code> prontos para envio.
+            </p>
+          </div>
+          <button onclick="openWatcherFolder('out')" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center space-x-2 transition-all">
+            <i data-lucide="folder-open" class="w-4 h-4"></i>
+            <span>Abrir Pasta de Otimizados</span>
+          </button>
+        </div>
+
+        <!-- Archived Originals Folder -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">Passo 3 &bull; Backup</span>
+              <i data-lucide="archive" class="w-5 h-5 text-slate-600"></i>
+            </div>
+            <h4 class="font-bold text-sm text-slate-900">3_Originais_Arquivados</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Os originais não alterados são guardados com segurança aqui para você nunca perder nada.
+            </p>
+          </div>
+          <button onclick="openWatcherFolder('orig')" class="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center space-x-2 transition-all">
+            <i data-lucide="folder-open" class="w-4 h-4"></i>
+            <span>Abrir Pasta de Backup</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Activity Log -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+            <i data-lucide="history" class="w-4 h-4 text-emerald-600"></i>
+            <span>Histórico de Arquivos Processados Automaticamente</span>
+          </h3>
+          <span class="text-xs text-slate-400">Atualização em tempo real</span>
+        </div>
+
+        <div id="watcher-logs-table-wrapper" class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-100">
+              <tr>
+                <th class="px-6 py-3">Hora</th>
+                <th class="px-6 py-3">Arquivo</th>
+                <th class="px-6 py-3">Original</th>
+                <th class="px-6 py-3">Otimizado</th>
+                <th class="px-6 py-3">Redução</th>
+                <th class="px-6 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="watcher-logs-tbody" class="divide-y divide-slate-100 text-slate-700">
+              <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-slate-400">
+                  Aguardando primeiro PDF na pasta de entrada...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal de Pré-visualização do PDF -->
+  <div id="preview-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-slate-200">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="eye" class="w-5 h-5 text-blue-600"></i>
+          <span id="preview-title" class="font-bold text-sm text-slate-800 truncate max-w-md">Pré-visualização do Documento</span>
+        </div>
+        <button id="btn-close-preview" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="flex-1 bg-slate-100 relative">
+        <iframe id="preview-iframe" class="w-full h-full border-0" src=""></iframe>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white py-6 mt-12 text-center text-xs text-slate-400">
+    <p>GhostPDF Studio &bull; Motor: Ghostscript 10.x &bull; 100% Local no seu computador</p>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    // ==========================================
+    // NAVEGAÇÃO DE ABAS
+    // ==========================================
+    function switchTab(tab) {
+      const tabs = ['compress', 'merge', 'split', 'images', 'watcher'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`tab-content-${t}`);
+        if (!btn || !content) return;
+        if (t === tab) {
+          btn.className = 'py-3.5 border-b-2 border-blue-600 text-blue-600 font-bold text-sm flex items-center space-x-2 whitespace-nowrap transition-all';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'py-3.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold text-sm flex items-center space-x-2 whitespace-nowrap transition-all';
+          content.classList.add('hidden');
+        }
+      });
+      lucide.createIcons();
+      if (tab === 'watcher') fetchWatcherStatus();
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // Modal Preview Handlers
+    const previewModal = document.getElementById('preview-modal');
+    const previewIframe = document.getElementById('preview-iframe');
+    const previewTitle = document.getElementById('preview-title');
+    const btnClosePreview = document.getElementById('btn-close-preview');
+
+    window.openPreview = function(url, title) {
+      previewTitle.innerText = title;
+      previewIframe.src = url;
+      previewModal.classList.remove('hidden');
+    };
+
+    btnClosePreview.addEventListener('click', () => {
+      previewModal.classList.add('hidden');
+      previewIframe.src = '';
+    });
+
+    previewModal.addEventListener('click', (e) => {
+      if (e.target === previewModal) {
+        previewModal.classList.add('hidden');
+        previewIframe.src = '';
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !previewModal.classList.contains('hidden')) {
+        previewModal.classList.add('hidden');
+        previewIframe.src = '';
+      }
+    });
+
+    // Check Ghostscript Status
+    const gsBadge = document.getElementById('gs-badge');
+    fetch('/api/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.ghostscript_available) {
+          gsBadge.className = 'flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+          gsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Ghostscript Conectado</span>`;
+        } else {
+          gsBadge.className = 'flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200';
+          gsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span><span>Ghostscript Não Encontrado</span>`;
+        }
+      })
+      .catch(() => {
+        gsBadge.className = 'flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200';
+        gsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span><span>Servidor Offline</span>`;
+      });
+
+    // ==========================================
+    // ABA 1: COMPRIMIR PDFS
+    // ==========================================
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
+    const emptyState = document.getElementById('empty-state');
+    const summaryBanner = document.getElementById('summary-banner');
+    const statCount = document.getElementById('stat-count');
+    const statOrigSize = document.getElementById('stat-orig-size');
+    const statNewSize = document.getElementById('stat-new-size');
+    const statSavedBytes = document.getElementById('stat-saved-bytes');
+    const statSavedPercent = document.getElementById('stat-saved-percent');
+    const btnDownloadAll = document.getElementById('btn-download-all');
+    const btnClear = document.getElementById('btn-clear');
+
+    let processedFiles = [];
+
+    document.querySelectorAll('input[name="preset"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        document.querySelectorAll('.preset-card').forEach(card => {
+          card.classList.remove('border-2', 'border-blue-600', 'bg-blue-50/30', 'selected');
+          card.classList.add('border', 'border-slate-200');
+          const indicator = card.querySelector('.radio-indicator');
+          indicator.className = 'radio-indicator w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center';
+        });
+
+        const selectedCard = e.target.closest('.preset-card');
+        selectedCard.classList.remove('border', 'border-slate-200');
+        selectedCard.classList.add('border-2', 'border-blue-600', 'bg-blue-50/30', 'selected');
+        const indicator = selectedCard.querySelector('.radio-indicator');
+        indicator.className = 'radio-indicator w-4 h-4 rounded-full border-4 border-blue-600 bg-white';
+      });
+    });
+
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => { e.preventDefault(); dropzone.classList.add('drag-active'); });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => { e.preventDefault(); dropzone.classList.remove('drag-active'); });
+    });
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (files.length > 0) handleFiles(files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (files.length > 0) handleFiles(files);
+      fileInput.value = '';
+    });
+
+    function getSelectedPreset() {
+      const checked = document.querySelector('input[name="preset"]:checked');
+      return checked ? checked.value : 'ebook';
+    }
+
+    function handleFiles(files) {
+      emptyState.classList.add('hidden');
+      btnClear.classList.remove('hidden');
+
+      files.forEach(file => {
+        const itemRowId = 'item-' + Math.random().toString(36).substring(2, 9);
+        const preset = getSelectedPreset();
+
+        const row = document.createElement('div');
+        row.id = itemRowId;
+        row.className = 'p-5 hover:bg-slate-50/80 transition-colors flex items-center justify-between gap-4';
+        row.innerHTML = `
+          <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+            <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <i data-lucide="file-text" class="w-6 h-6"></i>
+            </div>
+            <div class="min-w-0 flex-1 space-y-1">
+              <p class="text-sm font-semibold text-slate-800 truncate" title="${file.name}">${file.name}</p>
+              <div class="flex items-center space-x-2 text-xs text-slate-500">
+                <span class="font-medium">${formatBytes(file.size)}</span>
+                <span>&bull;</span>
+                <span class="status-text flex items-center space-x-1.5 text-blue-600 font-medium">
+                  <span class="inline-block w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
+                  <span>Otimizando via Ghostscript...</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4 shrink-0 action-area">
+            <span class="text-xs text-slate-400 italic font-medium">Processando...</span>
+          </div>
+        `;
+        fileList.prepend(row);
+        lucide.createIcons();
+
+        uploadAndCompress(file, preset, row);
+      });
+    }
+
+    async function uploadAndCompress(file, preset, rowElement) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('preset', preset);
+
+      try {
+        const response = await fetch('/api/compress', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.success) {
+          processedFiles.push(data);
+          updateSummary();
+
+          let badgeHtml = '';
+          let comparisonHtml = '';
+
+          if (data.status_tag === 'already_optimized' || data.reduction_percent <= 0) {
+            badgeHtml = `
+              <div class="text-right">
+                <span class="inline-flex items-center space-x-1 text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  <i data-lucide="check" class="w-3 h-3"></i>
+                  <span>Já Otimizado</span>
+                </span>
+                <p class="text-[11px] text-slate-400 mt-0.5">Tamanho ideal preservado</p>
+              </div>
+            `;
+            comparisonHtml = `
+              <span class="font-bold text-slate-700">${data.new_size_str}</span>
+              <span class="text-slate-400">&bull;</span>
+              <span class="text-slate-400">${data.duration}s</span>
+            `;
+          } else {
+            const badgeColor = data.reduction_percent >= 60 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+            badgeHtml = `
+              <div class="text-right">
+                <span class="inline-flex items-center space-x-1 text-xs font-extrabold px-3 py-1 rounded-full border ${badgeColor}">
+                  <span>-${data.reduction_percent}%</span>
+                </span>
+                <p class="text-[11px] font-medium text-emerald-600 mt-0.5">-${data.saved_str}</p>
+              </div>
+            `;
+            comparisonHtml = `
+              <span class="line-through text-slate-400 text-xs">${data.orig_size_str}</span>
+              <i data-lucide="arrow-right" class="w-3 h-3 text-slate-400"></i>
+              <span class="font-bold text-slate-800">${data.new_size_str}</span>
+              <span class="text-slate-400">&bull;</span>
+              <span class="text-slate-400 text-xs">${data.duration}s</span>
+            `;
+          }
+
+          rowElement.innerHTML = `
+            <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+              <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+              </div>
+              <div class="min-w-0 flex-1 space-y-1">
+                <p class="text-sm font-semibold text-slate-800 truncate" title="${data.output_filename}">${data.output_filename}</p>
+                <div class="flex items-center space-x-2 text-xs">${comparisonHtml}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-4 shrink-0">
+              ${badgeHtml}
+              <div class="flex items-center space-x-2">
+                <button onclick="openPreview('${data.preview_url}', '${data.output_filename}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all">
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                  <span>Ver</span>
+                </button>
+                <a href="${data.download_url}" download="${data.output_filename}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition-all">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  <span>Baixar</span>
+                </a>
+              </div>
+            </div>
+          `;
+          lucide.createIcons();
+        } else {
+          rowElement.innerHTML = `<div class="p-4 text-xs text-red-600 font-semibold">${data.error || 'Erro no processamento'}</div>`;
+        }
+      } catch (err) {
+        rowElement.innerHTML = `<div class="p-4 text-xs text-red-600 font-semibold">Erro de conexão com o servidor</div>`;
+      }
+    }
+
+    function updateSummary() {
+      if (processedFiles.length === 0) {
+        summaryBanner.classList.add('hidden');
+        return;
+      }
+      summaryBanner.classList.remove('hidden');
+      statCount.innerText = processedFiles.length;
+
+      const totalOrig = processedFiles.reduce((acc, f) => acc + (f.orig_size || 0), 0);
+      const totalNew = processedFiles.reduce((acc, f) => acc + (f.new_size || 0), 0);
+      const totalSaved = Math.max(0, totalOrig - totalNew);
+
+      statOrigSize.innerText = formatBytes(totalOrig);
+      statNewSize.innerText = formatBytes(totalNew);
+      statSavedBytes.innerText = formatBytes(totalSaved);
+
+      if (totalOrig > 0 && totalSaved > 0) {
+        const overallPercent = ((totalSaved / totalOrig) * 100).toFixed(1);
+        statSavedPercent.innerText = `-${overallPercent}%`;
+        statSavedPercent.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200';
+      } else {
+        statSavedPercent.innerText = '0%';
+        statSavedPercent.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-200';
+      }
+    }
+
+    btnDownloadAll.addEventListener('click', async () => {
+      const ids = processedFiles.map(f => f.file_id);
+      if (ids.length === 0) return;
+      const res = await fetch('/api/download-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_ids: ids })
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'documentos_otimizados.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    });
+
+    btnClear.addEventListener('click', () => {
+      processedFiles = [];
+      fileList.innerHTML = '';
+      fileList.appendChild(emptyState);
+      emptyState.classList.remove('hidden');
+      btnClear.classList.add('hidden');
+      summaryBanner.classList.add('hidden');
+    });
+
+    // ==========================================
+    // ABA 2: MESCLAR PDFS (FEATURE 1)
+    // ==========================================
+    const mergeDropzone = document.getElementById('merge-dropzone');
+    const mergeFileInput = document.getElementById('merge-file-input');
+    const mergeQueueSection = document.getElementById('merge-queue-section');
+    const mergeList = document.getElementById('merge-list');
+    const mergeCountBadge = document.getElementById('merge-count-badge');
+    const btnRunMerge = document.getElementById('btn-run-merge');
+    const btnMergeLabel = document.getElementById('btn-merge-label');
+    const mergeResultCard = document.getElementById('merge-result-card');
+
+    let mergeFiles = []; // Array of File
+
+    ['dragenter', 'dragover'].forEach(n => mergeDropzone.addEventListener(n, e => { e.preventDefault(); mergeDropzone.classList.add('drag-active'); }));
+    ['dragleave', 'drop'].forEach(n => mergeDropzone.addEventListener(n, e => { e.preventDefault(); mergeDropzone.classList.remove('drag-active'); }));
+    mergeDropzone.addEventListener('click', () => mergeFileInput.click());
+
+    mergeDropzone.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (files.length > 0) addMergeFiles(files);
+    });
+
+    mergeFileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (files.length > 0) addMergeFiles(files);
+      mergeFileInput.value = '';
+    });
+
+    function addMergeFiles(files) {
+      files.forEach(f => mergeFiles.push(f));
+      renderMergeList();
+    }
+
+    function renderMergeList() {
+      if (mergeFiles.length === 0) {
+        mergeQueueSection.classList.add('hidden');
+        return;
+      }
+      mergeQueueSection.classList.remove('hidden');
+      mergeCountBadge.innerText = mergeFiles.length;
+      btnMergeLabel.innerText = `Mesclar e Otimizar (${mergeFiles.length} arquivos)`;
+
+      mergeList.innerHTML = '';
+      mergeFiles.forEach((file, index) => {
+        const row = document.createElement('div');
+        row.className = 'p-4 flex items-center justify-between hover:bg-slate-50 transition-colors';
+        row.innerHTML = `
+          <div class="flex items-center space-x-3 min-w-0 flex-1">
+            <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0">
+              ${index + 1}
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-800 truncate" title="${file.name}">${file.name}</p>
+              <p class="text-xs text-slate-400 mt-0.5">${formatBytes(file.size)}</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <button onclick="moveMergeFile(${index}, -1)" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="p-1 hover:text-blue-600"'} title="Mover para cima">
+              <i data-lucide="chevron-up" class="w-4 h-4"></i>
+            </button>
+            <button onclick="moveMergeFile(${index}, 1)" ${index === mergeFiles.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="p-1 hover:text-blue-600"'} title="Mover para baixo">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
+            <button onclick="removeMergeFile(${index})" class="p-1 text-red-500 hover:text-red-700" title="Remover">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        mergeList.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    window.moveMergeFile = function(index, direction) {
+      const newIdx = index + direction;
+      if (newIdx < 0 || newIdx >= mergeFiles.length) return;
+      const tmp = mergeFiles[index];
+      mergeFiles[index] = mergeFiles[newIdx];
+      mergeFiles[newIdx] = tmp;
+      renderMergeList();
+    };
+
+    window.removeMergeFile = function(index) {
+      mergeFiles.splice(index, 1);
+      renderMergeList();
+    };
+
+    window.clearMergeList = function() {
+      mergeFiles = [];
+      renderMergeList();
+      mergeResultCard.classList.add('hidden');
+    };
+
+    window.runMergePdfs = async function() {
+      if (mergeFiles.length < 2) {
+        alert('Selecione pelo menos 2 arquivos para mesclar.');
+        return;
+      }
+
+      btnRunMerge.disabled = true;
+      btnRunMerge.classList.add('opacity-75');
+      btnMergeLabel.innerHTML = `
+        <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+        Mesclando com Ghostscript...
+      `;
+
+      const formData = new FormData();
+      mergeFiles.forEach(f => formData.append('pdfs', f));
+      formData.append('pdf_title', document.getElementById('merge-title').value);
+      formData.append('preset', document.getElementById('merge-preset').value);
+
+      try {
+        const response = await fetch('/api/merge-pdfs', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.success) {
+          mergeResultCard.classList.remove('hidden');
+          document.getElementById('merge-result-title').innerText = data.output_filename;
+          document.getElementById('merge-result-pages').innerText = `${data.page_count} páginas no total (${data.file_count} arquivos)`;
+          document.getElementById('merge-result-orig').innerText = data.orig_size_str;
+          document.getElementById('merge-result-new').innerText = data.new_size_str;
+          document.getElementById('merge-result-duration').innerText = `${data.duration}s`;
+
+          const badge = document.getElementById('merge-result-badge');
+          if (data.reduction_percent > 0) {
+            badge.innerText = `-${data.reduction_percent}% (${data.saved_str} economizados)`;
+            badge.className = 'text-xs font-extrabold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+          } else {
+            badge.innerText = 'Mesclado com Sucesso';
+            badge.className = 'text-xs font-bold px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200';
+          }
+
+          document.getElementById('btn-merge-preview').onclick = () => openPreview(data.preview_url, data.output_filename);
+          const dl = document.getElementById('btn-merge-download');
+          dl.href = data.download_url;
+          dl.download = data.output_filename;
+
+          mergeResultCard.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          alert('Erro ao mesclar PDFs: ' + (data.error || 'Erro desconhecido'));
+        }
+      } catch (err) {
+        alert('Erro de conexão ao mesclar PDFs.');
+      } finally {
+        btnRunMerge.disabled = false;
+        btnRunMerge.classList.remove('opacity-75');
+        btnMergeLabel.innerText = `Mesclar e Otimizar (${mergeFiles.length} arquivos)`;
+      }
+    };
+
+    // ==========================================
+    // ABA 3: DIVIDIR / EXTRAIR (FEATURE 2)
+    // ==========================================
+    const splitDropzone = document.getElementById('split-dropzone');
+    const splitFileInput = document.getElementById('split-file-input');
+    const splitConfigCard = document.getElementById('split-config-card');
+    const splitResultCard = document.getElementById('split-result-card');
+    let currentSplitFile = null;
+    let splitTotalPages = 1;
+
+    splitDropzone.addEventListener('click', () => splitFileInput.click());
+    splitDropzone.addEventListener('dragover', e => { e.preventDefault(); splitDropzone.classList.add('drag-active'); });
+    splitDropzone.addEventListener('dragleave', e => { e.preventDefault(); splitDropzone.classList.remove('drag-active'); });
+    splitDropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      splitDropzone.classList.remove('drag-active');
+      const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (files.length > 0) loadSplitFile(files[0]);
+    });
+
+    splitFileInput.addEventListener('change', e => {
+      if (e.target.files.length > 0) loadSplitFile(e.target.files[0]);
+      splitFileInput.value = '';
+    });
+
+    async function loadSplitFile(file) {
+      currentSplitFile = file;
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/pdf-info', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+          splitTotalPages = data.page_count;
+          document.getElementById('split-file-name').innerText = data.filename;
+          document.getElementById('split-total-pages').innerText = `${data.page_count} ${data.page_count === 1 ? 'página' : 'páginas'}`;
+          document.getElementById('split-file-size').innerText = data.size_str;
+          document.getElementById('split-range-input').value = `1-${Math.min(3, data.page_count)}`;
+          
+          splitDropzone.classList.add('hidden');
+          splitConfigCard.classList.remove('hidden');
+          splitResultCard.classList.add('hidden');
+        } else {
+          alert('Não foi possível ler o PDF: ' + (data.error || 'Erro desconhecido'));
+        }
+      } catch (err) {
+        alert('Erro ao inspecionar o arquivo.');
+      }
+    }
+
+    window.clearSplitFile = function() {
+      currentSplitFile = null;
+      splitDropzone.classList.remove('hidden');
+      splitConfigCard.classList.add('hidden');
+      splitResultCard.classList.add('hidden');
+    };
+
+    window.selectSplitMode = function(mode) {
+      document.querySelectorAll('.split-mode-card').forEach(card => {
+        card.classList.remove('border-2', 'border-blue-600', 'bg-blue-50/20');
+        card.classList.add('border', 'border-slate-200');
+      });
+      const selected = event.currentTarget;
+      selected.classList.remove('border', 'border-slate-200');
+      selected.classList.add('border-2', 'border-blue-600', 'bg-blue-50/20');
+      selected.querySelector('input[type="radio"]').checked = true;
+    };
+
+    window.runSplitPdf = async function() {
+      if (!currentSplitFile) return;
+
+      const mode = document.querySelector('input[name="split-mode"]:checked').value;
+      const range = document.getElementById('split-range-input').value;
+
+      const btn = document.getElementById('btn-run-split');
+      const label = document.getElementById('btn-split-label');
+      btn.disabled = true;
+      btn.classList.add('opacity-75');
+      label.innerHTML = `
+        <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+        Processando...
+      `;
+
+      const formData = new FormData();
+      formData.append('file', currentSplitFile);
+      formData.append('mode', mode);
+      formData.append('range', range);
+      formData.append('preset', 'ebook');
+
+      try {
+        const response = await fetch('/api/split-pdf', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.success) {
+          splitResultCard.classList.remove('hidden');
+          document.getElementById('split-result-title').innerText = data.output_filename;
+          document.getElementById('split-result-pages').innerText = `${data.page_count} páginas processadas`;
+          document.getElementById('split-result-size').innerText = data.new_size_str;
+          document.getElementById('split-result-duration').innerText = `${data.duration}s`;
+
+          const prevBtn = document.getElementById('btn-split-preview');
+          if (data.is_zip) {
+            prevBtn.classList.add('hidden');
+          } else {
+            prevBtn.classList.remove('hidden');
+            prevBtn.onclick = () => openPreview(data.preview_url, data.output_filename);
+          }
+
+          const dl = document.getElementById('btn-split-download');
+          dl.href = data.download_url;
+          dl.download = data.output_filename;
+
+          splitResultCard.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          alert('Erro ao dividir PDF: ' + (data.error || 'Erro desconhecido'));
+        }
+      } catch (err) {
+        alert('Erro de conexão ao processar divisão do PDF.');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-75');
+        label.innerText = 'Processar e Extrair';
+      }
+    };
+
+    // ==========================================
+    // ABA 4: IMAGENS PARA PDF (FEATURE 4)
+    // ==========================================
+    const imgDropzone = document.getElementById('img-dropzone');
+    const imgFileInput = document.getElementById('img-file-input');
+    const imgGallerySection = document.getElementById('img-gallery-section');
+    const imgGrid = document.getElementById('img-grid');
+    const imgCountBadge = document.getElementById('img-count-badge');
+    const btnConvertImages = document.getElementById('btn-convert-images');
+    const btnConvertLabel = document.getElementById('btn-convert-label');
+    const imgResultCard = document.getElementById('img-result-card');
+
+    let selectedImages = [];
+
+    ['dragenter', 'dragover'].forEach(n => imgDropzone.addEventListener(n, e => { e.preventDefault(); imgDropzone.classList.add('drag-active'); }));
+    ['dragleave', 'drop'].forEach(n => imgDropzone.addEventListener(n, e => { e.preventDefault(); imgDropzone.classList.remove('drag-active'); }));
+    imgDropzone.addEventListener('click', () => imgFileInput.click());
+
+    imgDropzone.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      if (files.length > 0) addImages(files);
+    });
+
+    imgFileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+      if (files.length > 0) addImages(files);
+      imgFileInput.value = '';
+    });
+
+    function addImages(files) {
+      files.forEach(file => {
+        selectedImages.push({
+          file: file,
+          previewUrl: URL.createObjectURL(file),
+          id: Math.random().toString(36).substring(2, 9)
+        });
+      });
+      renderImageGrid();
+    }
+
+    function renderImageGrid() {
+      if (selectedImages.length === 0) {
+        imgGallerySection.classList.add('hidden');
+        return;
+      }
+
+      imgGallerySection.classList.remove('hidden');
+      imgCountBadge.innerText = selectedImages.length;
+      btnConvertLabel.innerText = `Gerar e Otimizar PDF (${selectedImages.length} fotos)`;
+
+      imgGrid.innerHTML = '';
+      selectedImages.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'relative bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm group hover:border-blue-400 transition-all';
+        card.innerHTML = `
+          <div class="h-32 bg-slate-100 relative overflow-hidden flex items-center justify-center">
+            <img src="${item.previewUrl}" alt="${item.file.name}" class="w-full h-full object-cover">
+            <span class="absolute top-2 left-2 bg-slate-900/80 text-white font-bold text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+              Pág ${index + 1}
+            </span>
+            <button onclick="removeImage(${index})" class="absolute top-2 right-2 p-1 bg-red-600/90 hover:bg-red-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" title="Remover foto">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <div class="p-2.5">
+            <p class="text-xs font-semibold text-slate-800 truncate" title="${item.file.name}">${item.file.name}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${formatBytes(item.file.size)}</p>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+              <button onclick="moveImage(${index}, -1)" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-blue-600"'} title="Mover para esquerda">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <span class="text-[10px] font-medium text-slate-400">${index + 1}/${selectedImages.length}</span>
+              <button onclick="moveImage(${index}, 1)" ${index === selectedImages.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-blue-600"'} title="Mover para direita">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        imgGrid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    window.removeImage = function(index) {
+      URL.revokeObjectURL(selectedImages[index].previewUrl);
+      selectedImages.splice(index, 1);
+      renderImageGrid();
+    };
+
+    window.moveImage = function(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= selectedImages.length) return;
+      const temp = selectedImages[index];
+      selectedImages[index] = selectedImages[newIndex];
+      selectedImages[newIndex] = temp;
+      renderImageGrid();
+    };
+
+    window.clearImages = function() {
+      selectedImages.forEach(i => URL.revokeObjectURL(i.previewUrl));
+      selectedImages = [];
+      renderImageGrid();
+      imgResultCard.classList.add('hidden');
+    };
+
+    window.toggleImgTitleLabel = function() {
+      const mode = document.getElementById('img-output-mode').value;
+      const lbl = document.getElementById('lbl-img-pdf-title');
+      const input = document.getElementById('img-pdf-title');
+      if (mode === 'individual') {
+        lbl.innerText = 'Prefixo / Nome do Pacote ZIP';
+        if (input.value === 'documento_fotos.pdf') {
+          input.value = 'fotos_convertidas.zip';
+        }
+      } else {
+        lbl.innerText = 'Nome do Arquivo PDF';
+        if (input.value === 'fotos_convertidas.zip') {
+          input.value = 'documento_fotos.pdf';
+        }
+      }
+    };
+
+    window.convertImagesToPdf = async function() {
+      if (selectedImages.length === 0) return;
+
+      btnConvertImages.disabled = true;
+      btnConvertImages.classList.add('opacity-75');
+      const isOcr = document.getElementById('img-enable-ocr').checked;
+      btnConvertLabel.innerHTML = `
+        <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+        ${isOcr ? 'Aplicando OCR e Otimizando...' : 'Processando com Ghostscript...'}
+      `;
+
+      const formData = new FormData();
+      selectedImages.forEach(item => formData.append('images', item.file));
+      formData.append('output_mode', document.getElementById('img-output-mode').value);
+      formData.append('pdf_title', document.getElementById('img-pdf-title').value);
+      formData.append('page_size', document.getElementById('img-page-size').value);
+      formData.append('orientation', document.getElementById('img-orientation').value);
+      formData.append('preset', document.getElementById('img-preset').value);
+      formData.append('enable_ocr', isOcr);
+      formData.append('ocr_lang', document.getElementById('img-ocr-lang').value);
+
+      try {
+        const response = await fetch('/api/images-to-pdf', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.success) {
+          imgResultCard.classList.remove('hidden');
+          document.getElementById('img-result-title').innerText = data.output_filename;
+          document.getElementById('img-result-pages').innerText = data.is_zip 
+            ? `${data.page_count} arquivos PDF gerados`
+            : `${data.page_count} ${data.page_count === 1 ? 'página' : 'páginas'}`;
+          document.getElementById('img-result-orig').innerText = data.orig_size_str;
+          document.getElementById('img-result-new').innerText = data.new_size_str;
+          document.getElementById('img-result-duration').innerText = `${data.duration}s`;
+
+          const badge = document.getElementById('img-result-badge');
+          if (data.reduction_percent > 0) {
+            badge.innerText = `-${data.reduction_percent}% (${data.saved_str} economizados)`;
+            badge.className = 'text-xs font-extrabold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+          } else {
+            badge.innerText = data.is_zip ? 'ZIP Pronto' : 'PDF Otimizado';
+            badge.className = 'text-xs font-bold px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200';
+          }
+
+          const btnPreview = document.getElementById('btn-img-preview');
+          if (data.is_zip) {
+            btnPreview.classList.add('hidden');
+          } else {
+            btnPreview.classList.remove('hidden');
+            btnPreview.onclick = () => openPreview(data.preview_url, data.output_filename);
+          }
+
+          const dlBtn = document.getElementById('btn-img-download');
+          dlBtn.href = data.download_url;
+          dlBtn.download = data.output_filename;
+          dlBtn.innerHTML = `
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>${data.is_zip ? 'Baixar Pacote ZIP' : 'Baixar PDF'}</span>
+          `;
+          lucide.createIcons();
+
+          imgResultCard.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          alert('Erro ao converter imagens: ' + (data.error || 'Erro desconhecido'));
+        }
+      } catch (err) {
+        alert('Erro de conexão ao processar as imagens.');
+      } finally {
+        btnConvertImages.disabled = false;
+        btnConvertImages.classList.remove('opacity-75');
+        btnConvertLabel.innerText = `Gerar e Otimizar PDF (${selectedImages.length} fotos)`;
+      }
+    };
+
+    // ==========================================
+    // ABA 5: PASTA MONITORADA (FEATURE 7 - AUTO)
+    // ==========================================
+    let watcherInterval = null;
+
+    async function fetchWatcherStatus() {
+      try {
+        const res = await fetch('/api/watcher/status');
+        const data = await res.json();
+
+        document.getElementById('watcher-stat-count').innerText = `${data.processed_count} arquivos`;
+        document.getElementById('watcher-stat-saved').innerText = data.saved_total_str;
+
+        const dot = document.getElementById('watcher-status-dot');
+        const title = document.getElementById('watcher-status-title');
+        const btnToggle = document.getElementById('btn-toggle-watcher');
+
+        if (data.enabled) {
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
+          title.innerText = 'Monitoramento em Tempo Real Ativo';
+          btnToggle.innerText = 'Pausar';
+          btnToggle.className = 'px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700 transition-all';
+        } else {
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+          title.innerText = 'Monitoramento Pausado';
+          btnToggle.innerText = 'Retomar';
+          btnToggle.className = 'px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md';
+        }
+
+        const tbody = document.getElementById('watcher-logs-tbody');
+        if (data.logs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">Aguardando novos PDFs na pasta de entrada...</td></tr>`;
+        } else {
+          tbody.innerHTML = data.logs.map(log => `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-3 font-mono text-slate-500">${log.timestamp}</td>
+              <td class="px-6 py-3 font-semibold text-slate-800">${log.filename}</td>
+              <td class="px-6 py-3 text-slate-400">${log.orig_str}</td>
+              <td class="px-6 py-3 font-bold text-slate-800">${log.new_str}</td>
+              <td class="px-6 py-3 font-extrabold text-emerald-600">${log.reduction > 0 ? '-' + log.reduction + '%' : '0%'}</td>
+              <td class="px-6 py-3">
+                <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${log.reduction > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}">
+                  ${log.status}
+                </span>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {}
+    }
+
+    window.toggleWatcher = async function() {
+      try {
+        await fetch('/api/watcher/toggle', { method: 'POST' });
+        fetchWatcherStatus();
+      } catch (err) {}
+    };
+
+    window.openWatcherFolder = async function(type) {
+      try {
+        await fetch('/api/watcher/open-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: type })
+        });
+      } catch (err) {
+        alert('Não foi possível abrir o Explorador de Arquivos.');
+      }
+    };
+
+    // Auto-refresh watcher status every 3 seconds
+    setInterval(fetchWatcherStatus, 3000);
+
+  </script>
+</body>
+</html>
